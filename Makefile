@@ -1,5 +1,10 @@
+.PHONY: db
+
 install:
 	pip install -r requirements.txt
+
+db:
+	mysql -u root -p -e "CREATE DATABASE patent_calculation;"
 
 lint:
 	ruff check .
@@ -13,3 +18,5 @@ lint-fix:
 clean:
 	rm -rf .mypy_cache
 	rm -rf .ruff_cache
+	rm -rf tmp
+	rm db.log

@@ -1,6 +1,6 @@
 python data2db.py \
-  --csv-file "data/merged.csv" \
-  --log-interval 100 \
+  --csv-file "data/merged.csv.sample" \
+  --log-interval 3 \
   --publication-number "Publication number" \
   --publication-date "Publication date" \
   --patent-office "Patent office" \

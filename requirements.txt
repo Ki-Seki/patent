@@ -2,3 +2,5 @@ mysql-connector-python
 sqlalchemy
 mypy
 ruff
+pymysql
+beautifulsoup4
