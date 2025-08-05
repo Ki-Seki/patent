@@ -60,9 +60,9 @@ def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: 
 
             patent_count = 0
             patent = None
-            for idx, row in tqdm(enumerate(reader), desc="导入专利数据到数据库中"):                
+            for idx, row in tqdm(enumerate(reader), desc="导入专利数据到数据库中"):
                 # 每log_interval条记录输出一次日志
-                if (idx+1) % log_interval == 0:
+                if (idx + 1) % log_interval == 0:
                     logger.info(f"正在处理CSV第 {idx+1} 行：{list(simplify_row(row, field).values())}")
 
                 # 遇到新的专利行
@@ -95,7 +95,7 @@ def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: 
                 # 仅包含引用信息的行
                 else:
                     if patent is None:
-                        logger.info(f"跳过：可能是没有专利的后继引用行，或者是重复的专利的后继引用行")
+                        logger.info("跳过：可能是没有专利的后继引用行，或者是重复的专利的后继引用行")
                         continue
 
                     f_citation = row[field.forward_citations].strip()
