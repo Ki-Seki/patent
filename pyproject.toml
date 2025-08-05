@@ -16,7 +16,6 @@ lint.extend-select = [
     "PGH", # pygrep
     "RUF", # ruff checks
     "SIM", # flake8-simplify
-    "TC", # flake8-type-checking
     "TID", # flake8-tidy-imports
     "UP",  # pyupgrade
 ]

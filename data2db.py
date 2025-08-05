@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from db import SessionLocal, engine
 from db.log import get_logger
-from db.models import Base, Citation, Patent
+from db.models import Base, Patent
 
 
 logger = get_logger(__name__)
@@ -35,7 +35,7 @@ def parse_abstract(raw_abstract: str) -> str:
     return BeautifulSoup(raw_abstract, "lxml").get_text(separator="", strip=True)
 
 
-def simplify_row(row: dict[str], field: DataField) -> dict[str]:
+def simplify_row(row: dict[str, str], field: DataField) -> dict[str, str]:
     """简化行数据，保留必要的字段"""
     return {
         field.publication_number: row[field.publication_number].strip(),
@@ -59,83 +59,55 @@ def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: 
             reader = csv.DictReader(file)
 
             patent_count = 0
-            citation_count = 0
+            patent = None
+            for idx, row in tqdm(enumerate(reader), desc="导入专利数据到数据库中"):                
+                # 每log_interval条记录输出一次日志
+                if (idx+1) % log_interval == 0:
+                    logger.info(f"正在处理CSV第 {idx+1} 行：{list(simplify_row(row, field).values())}")
 
-            last_publication_number = ""
-            for idx, row in tqdm(enumerate(reader), desc="导入专利数据到数据库中"):
-                if idx % log_interval == 0:
-                    logger.debug(f"当前处理第 {idx} 行: {simplify_row(row, field)}")
+                # 遇到新的专利行
+                if row[field.publication_number].strip() != "":
+                    # 1. 提交上一个patent，除去第一个
+                    if patent is not None:
+                        db.add(patent)
+                        db.commit()
+                        patent_count += 1
+                        patent = None
 
-                curr_publication_number = row[field.publication_number].strip()
-
-                # 该新的专利号的导入了
-                if curr_publication_number != "":
-                    # 1. 提交上一批专利信息
-                    db.commit()
-
-                    # 2. 更新上一个专利号
-                    last_publication_number = curr_publication_number
-
-                    # 3. 检查当前专利是否已存在
-                    if db.query(Patent).filter(Patent.publication_number == curr_publication_number).first():
-                        logger.info(f"专利 {curr_publication_number} 已存在，跳过")
+                    # 2. 检查是否已经存在该专利
+                    pub_num = row[field.publication_number].strip()
+                    if db.query(Patent).filter(Patent.publication_number == pub_num).first():
+                        logger.info(f"跳过：专利 {pub_num} 已存在")
                         continue
 
-                    # 4. 创建当前专利记录
+                    # 3. 添加当前行的专利信息
                     patent = Patent(
-                        publication_number=curr_publication_number,
+                        publication_number=row[field.publication_number].strip(),
                         publication_date=parse_date(row[field.publication_date].strip()),
                         patent_office=row[field.patent_office].strip(),
                         application_filing_date=parse_date(row[field.application_filing_date].strip()),
                         applicants_bvd_id_numbers=row[field.applicants_bvd_id_numbers].strip(),
+                        backward_citations=row[field.backward_citations].strip(),
+                        forward_citations=row[field.forward_citations].strip(),
                         abstract=parse_abstract(row[field.abstract]),
                     )
-                    db.add(patent)
-                    patent_count += 1
 
-                    # 5. 日志输出
-                    if patent_count % log_interval == 0:
-                        logger.info(
-                            f"已导入 {patent_count} 条专利记录，{citation_count} 条引用关系。注意：由于本行的引用关系还未添加，所以这里的引用数可能少最多 2 条。"
-                        )
+                # 仅包含引用信息的行
+                else:
+                    if patent is None:
+                        logger.info(f"跳过：可能是没有专利的后继引用行，或者是重复的专利的后继引用行")
+                        continue
 
-                if row[field.forward_citations].strip() != "":
-                    f_citation = Citation(
-                        citing_patent=row[field.forward_citations].strip(),
-                        cited_patent=last_publication_number,
-                        similarity=None,
-                    )
-                    if (
-                        not db.query(Citation)
-                        .filter(
-                            Citation.citing_patent == f_citation.citing_patent,
-                            Citation.cited_patent == f_citation.cited_patent,
-                        )
-                        .first()
-                    ):
-                        db.add(f_citation)
-                        citation_count += 1
-
-                if row[field.backward_citations].strip() != "":
-                    b_citation = Citation(
-                        citing_patent=last_publication_number,
-                        cited_patent=row[field.backward_citations].strip(),
-                        similarity=None,
-                    )
-                    if (
-                        not db.query(Citation)
-                        .filter(
-                            Citation.citing_patent == b_citation.citing_patent,
-                            Citation.cited_patent == b_citation.cited_patent,
-                        )
-                        .first()
-                    ):
-                        db.add(b_citation)
-                        citation_count += 1
+                    f_citation = row[field.forward_citations].strip()
+                    if f_citation and f_citation not in patent.forward_citations:
+                        patent.forward_citations += f",{f_citation}"  # type: ignore[assignment]
+                    b_citation = row[field.backward_citations].strip()
+                    if b_citation and b_citation not in patent.backward_citations:
+                        patent.backward_citations += f",{b_citation}"  # type: ignore[assignment]
 
             # 提交剩余的记录
             db.commit()
-            logger.info(f"导入完成！共导入 {patent_count} 条专利记录，{citation_count} 条引用关系")
+            logger.info(f"导入完成！共导入 {patent_count} 条专利记录")
 
     except Exception as e:
         db.rollback()
