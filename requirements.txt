@@ -4,3 +4,4 @@ mypy
 ruff
 pymysql
 beautifulsoup4
+dotenv
