@@ -23,3 +23,9 @@ class PatentMatrix(Base):
     small_patent = Column(String(20), ForeignKey("patent.publication_number"), primary_key=True)
     big_patent = Column(String(20), ForeignKey("patent.publication_number"), primary_key=True)
     similarity = Column(DECIMAL)
+
+
+class PatentMissing(Base):
+    __tablename__ = "patent_missing"
+
+    publication_number = Column(String(20), primary_key=True)

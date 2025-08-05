@@ -7,3 +7,4 @@ beautifulsoup4
 dotenv
 tqdm-stubs
 lxml
+more-itertools
