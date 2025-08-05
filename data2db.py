@@ -3,8 +3,9 @@ import csv
 import datetime
 
 from dataclasses import dataclass
+from functools import lru_cache
 
-from bs4 import BeautifulSoup
+from lxml import html
 from more_itertools import peekable
 from tqdm import tqdm
 
@@ -32,8 +33,13 @@ def parse_date(date_str: str) -> datetime.date:
     return datetime.datetime.strptime(date_str.strip(), "%d/%m/%Y").date()
 
 
+@lru_cache(maxsize=512)
 def parse_abstract(raw_abstract: str) -> str:
-    return BeautifulSoup(raw_abstract, "lxml").get_text(separator="", strip=True)
+    try:
+        tree = html.fromstring(raw_abstract)
+        return tree.text_content().strip()  # type: ignore[attr-defined]
+    except Exception:
+        return raw_abstract.strip()
 
 
 def simplify_row(row: dict[str, str], field: DataField) -> str:

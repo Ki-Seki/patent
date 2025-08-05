@@ -3,8 +3,8 @@ sqlalchemy
 mypy
 ruff
 pymysql
-beautifulsoup4
 dotenv
 tqdm-stubs
 lxml
+lxml-stubs
 more-itertools
