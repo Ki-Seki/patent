@@ -14,6 +14,8 @@ from db.log import get_logger
 from db.models import Base, Patent
 
 
+csv.field_size_limit(10**9)
+
 logger = get_logger(__name__)
 
 
