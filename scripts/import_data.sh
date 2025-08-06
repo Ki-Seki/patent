@@ -4,7 +4,7 @@ set -exuo pipefail
 
 python data2db.py \
   --csv-file "data/merged.csv" \
-  --log-interval 10000 \
+  --log-interval 100000 \
   --publication-number "Publication number" \
   --publication-date "Publication date" \
   --patent-office "Patent office" \
@@ -17,7 +17,7 @@ python data2db.py \
 
 python data2db.py \
   --csv-file "data/merged_backwards.csv" \
-  --log-interval 10000 \
+  --log-interval 100000 \
   --publication-number "发布代码" \
   --publication-date "发布日期" \
   --patent-office "专利局" \
