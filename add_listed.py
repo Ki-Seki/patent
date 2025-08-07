@@ -43,6 +43,8 @@ if __name__ == "__main__":
                     logger.warning(f"Patent {publication_number} not found in the database.")
             except Exception as e:
                 logger.error(e)
+            p_bar.update(1)
+        p_bar.close()
 
     session.commit()
     session.close()
