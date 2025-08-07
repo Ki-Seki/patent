@@ -24,7 +24,7 @@ if __name__ == "__main__":
     session = SessionLocal()
     with open(args.csv_file, encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        p_bar = tqdm(desc="Processing rows")
+        p_bar: tqdm = tqdm(desc="Processing rows")
         while True:
             try:
                 row = next(reader, None)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
                 patent = session.query(Patent).filter_by(publication_number=publication_number).first()
                 if patent:
-                    patent.listed_company = True
+                    patent.listed_company = True  # type: ignore[assignment]
                     session.add(patent)
                     logger.info(f"Updated listed company for patent {publication_number}.")
                 else:
