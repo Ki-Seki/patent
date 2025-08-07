@@ -1,4 +1,4 @@
-from sqlalchemy import DECIMAL, Column, Date, ForeignKey, String, Text
+from sqlalchemy import DECIMAL, Boolean, Column, Date, ForeignKey, String, Text
 
 from . import Base
 
@@ -14,7 +14,9 @@ class Patent(Base):
     backward_citations = Column(Text)
     forward_citations = Column(Text)
     abstract = Column(Text)
+    # 下面的字段不存在于原始csv数据中
     peer_citations = Column(Text, default=None)  # 除自身外的，引用的被引
+    listed_company = Column(Boolean, default=None)  # 是否上市公司
 
 
 class PatentMatrix(Base):

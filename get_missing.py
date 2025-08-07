@@ -65,7 +65,7 @@ def collect_missing_citations(batch_size: int = 100000):
             db.commit()
 
             total_missing += len(missing_citations)
-        
+
             logger.info(f"{total_missing} / {total_processed} 专利缺失引用已收集")
 
     db.close()
