@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add listed company information to patents.")
     parser.add_argument("--csv-file", type=str, help="Path to the CSV file containing listed company data.")
     parser.add_argument("--publication-number", type=str, required=True, help="Column name for publication number.")
-    parser.add_argument("--commit-interval", type=int, default=1000, help="Number of records to commit at once.")
+    parser.add_argument("--commit-interval", type=int, required=True, help="Number of records to commit at once.")
     args = parser.parse_args()
     logger.info(f"Starting to add listed company information. {args=}")
 
