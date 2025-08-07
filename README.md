@@ -47,3 +47,30 @@ datadir = /mnt/public2/code/ssc/.mysql
 service mysqld start
 
 ```
+
+# TODO
+
+```
+# Traceback (most recent call last):
+#   File "/mnt/public2/code/ssc/patent/data2db.py", line 176, in <module>
+#     import_patents_from_csv(args.csv_file, field, args.log_interval)
+#   File "/mnt/public2/code/ssc/patent/data2db.py", line 81, in import_patents_from_csv
+#     while row := reader.peek(None):
+#   File "/opt/conda/lib/python3.10/site-packages/more_itertools/more.py", line 381, in peek
+#     self._cache.append(next(self._it))
+#   File "/opt/conda/lib/python3.10/csv.py", line 111, in __next__
+#     row = next(self.reader)
+#   File "/opt/conda/lib/python3.10/codecs.py", line 322, in decode
+#     (result, consumed) = self._buffer_decode(data, self.errors, final)
+#   File "/opt/conda/lib/python3.10/encodings/utf_8_sig.py", line 69, in _buffer_decode
+#     return codecs.utf_8_decode(input, errors, final)
+# UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe5 in position 5119: invalid continuation byte
+```
+
+
+# Priority
+
+- tag listed-company
+- cal missing
+- cd value
+- test shared disk usability
