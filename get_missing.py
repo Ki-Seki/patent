@@ -18,7 +18,7 @@ def collect_missing_citations(batch_size: int = 100000):
     db = SessionLocal()
     offset = 0
     total_processed = 0  # 已处理的专利数量
-    total_missing = 0  # 已收集的缺失引用数量
+    total_missing = 0  # 已收集的缺失引用数量，未去重
     total_citations = 0  # 所有专利的前后引用数量合，未去重
 
     while True:
