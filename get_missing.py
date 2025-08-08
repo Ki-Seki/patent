@@ -41,7 +41,6 @@ def collect_missing_citations(batch_size: int = 100000):
         all_citations = set()
         for row in patents:
             all_citations.update(extract_citation_nums(row.backward_citations))
-            # all_citations.update(extract_citation_nums(row.forward_citations))
         total_citations += len(all_citations)
 
         if not all_citations:
@@ -68,7 +67,9 @@ def collect_missing_citations(batch_size: int = 100000):
 
             total_missing += len(missing_citations)
 
-            logger.warning(f"{total_missing} / {total_citations} 上市公司专利缺失引用已收集，来自 {total_processed} 条专利")
+            logger.warning(
+                f"{total_missing} / {total_citations} 上市公司专利缺失引用已收集，来自 {total_processed} 条专利"
+            )
 
     db.close()
 
