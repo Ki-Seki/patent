@@ -5,6 +5,7 @@ set -exuo pipefail
 python data2db.py \
   --csv-file "data/merged.csv" \
   --log-interval 100000 \
+  --all-are-listed-companies \
   --publication-number "Publication number" \
   --publication-date "Publication date" \
   --patent-office "Patent office" \
