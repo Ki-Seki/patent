@@ -1,4 +1,3 @@
-# TODO: add listed company support
 import argparse
 import csv
 import datetime
@@ -60,7 +59,7 @@ def simplify_row(row: dict[str, str], field: DataField) -> str:
     return ", ".join(v for v in simplified.values())
 
 
-def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: int):
+def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: int, all_are_listed_companies: bool):
     """从CSV文件导入专利数据"""
 
     db = SessionLocal()
@@ -114,6 +113,7 @@ def import_patents_from_csv(csv_file_path: str, field: DataField, log_interval: 
                     backward_citations=first_row[field.backward_citations].strip(),
                     forward_citations=first_row[field.forward_citations].strip(),
                     abstract=parse_abstract(first_row[field.abstract]),
+                    listed_company=1 if all_are_listed_companies else 0,
                 )
                 db.add(patent)
                 db.commit()
@@ -143,8 +143,9 @@ def get_args():
     parser = argparse.ArgumentParser(description="从CSV文件导入专利数据")
     parser.add_argument("--csv-file", type=str, required=True, help="CSV文件路径")
     parser.add_argument("--log-interval", type=int, required=True, help="日志输出间隔")
+    parser.add_argument("--all-are-listed-companies", action="store_true", help="是否所有专利都属于上市公司")
 
-    # 下面是各个列明的映射
+    # 下面是各个列名的映射
     parser.add_argument("--publication-number", type=str, required=True)
     parser.add_argument("--publication-date", type=str, required=True)
     parser.add_argument("--patent-office", type=str, required=True)
@@ -174,4 +175,4 @@ if __name__ == "__main__":
         abstract=args.abstract,
     )
 
-    import_patents_from_csv(args.csv_file, field, args.log_interval)
+    import_patents_from_csv(args.csv_file, field, args.log_interval, args.all_are_listed_companies)

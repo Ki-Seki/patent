@@ -1,4 +1,3 @@
-# TODO：有错误需要改，只算上市公司的
 from sqlalchemy.dialects.mysql import insert
 
 from db import SessionLocal, engine
@@ -18,13 +17,15 @@ def extract_citation_nums(citation_str):
 def collect_missing_citations(batch_size: int = 100000):
     db = SessionLocal()
     offset = 0
-    total_processed = 0
-    total_missing = 0
+    total_processed = 0  # 已处理的专利数量
+    total_missing = 0  # 已收集的缺失引用数量
+    total_citations = 0  # 所有专利的前后引用数量合，未去重
 
     while True:
-        # 批量读取
+        # 批量读取上市公司的专利
         patents = (
             db.query(Patent.publication_number, Patent.backward_citations, Patent.forward_citations)
+            .filter(Patent.listed_company == 1)
             .offset(offset)
             .limit(batch_size)
             .all()
@@ -41,6 +42,7 @@ def collect_missing_citations(batch_size: int = 100000):
         for row in patents:
             all_citations.update(extract_citation_nums(row.backward_citations))
             all_citations.update(extract_citation_nums(row.forward_citations))
+        total_citations += len(all_citations)
 
         if not all_citations:
             continue
@@ -66,13 +68,13 @@ def collect_missing_citations(batch_size: int = 100000):
 
             total_missing += len(missing_citations)
 
-            logger.info(f"{total_missing} / {total_processed} 专利缺失引用已收集")
+            logger.warning(f"{total_missing} / {total_citations} 上市公司专利缺失引用已收集，来自 {total_processed} 条专利")
 
     db.close()
 
 
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
-    logger.info("Starting to collect missing citations...")
+    logger.info("Starting to collect missing citations for listed companies...")
     collect_missing_citations()
-    logger.info("Finished collecting missing citations.")
+    logger.info("Finished collecting missing citations for listed companies.")
