@@ -1,3 +1,4 @@
+from datetime import date
 from functools import lru_cache
 from typing import Literal
 
@@ -10,6 +11,15 @@ from db.models import Base, ExtendedInfo, Patent
 
 
 logger = get_logger(__name__)
+
+
+@lru_cache(maxsize=5120)
+def get_patent_date(db: Session, patent: str) -> date | None:
+    """
+    获取专利的发布日期
+    """
+    result = db.query(Patent.publication_date).filter(Patent.publication_number == patent).first()
+    return result[0] if result else None
 
 
 @lru_cache(maxsize=5120)
@@ -38,7 +48,22 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
 
     b0f1 = forward_patents - forward_patents_of_backward_patents
     b1f1 = forward_patents & forward_patents_of_backward_patents
-    b1f0 = forward_patents_of_backward_patents - forward_patents - {focus_patent}
+
+    # 获取焦点专利的发布日期
+    focus_patent_date = get_patent_date(db, focus_patent)
+
+    # 对于b1f0专利，需要过滤掉发布日期早于或等于焦点专利的专利
+    potential_b1f0 = forward_patents_of_backward_patents - forward_patents - {focus_patent}
+    b1f0 = set()
+
+    if focus_patent_date:
+        for patent in potential_b1f0:
+            patent_date = get_patent_date(db, patent)
+            if patent_date and patent_date > focus_patent_date:
+                b1f0.add(patent)
+    else:
+        # 如果焦点专利没有日期信息，保持原有逻辑
+        b1f0 = potential_b1f0
 
     return b0f1, b1f1, b1f0
 
