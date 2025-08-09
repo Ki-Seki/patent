@@ -15,8 +15,16 @@ class Patent(Base):
     forward_citations = Column(Text)
     abstract = Column(Text)
     # 下面的字段不存在于原始csv数据中
-    peer_citations = Column(Text, default=None)  # 除自身外的，引用的被引
     listed_company = Column(Boolean, default=None)  # 是否上市公司
+
+
+class ExtendedInfo(Base):
+    __tablename__ = "extended_info"
+
+    publication_number = Column(String(20), ForeignKey("patent.publication_number"), primary_key=True)
+    b1f0_patents = Column(Text)
+    b1f1_patents = Column(Text)
+    b0f1_patents = Column(Text)
 
 
 class PatentMatrix(Base):
