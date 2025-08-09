@@ -12,7 +12,7 @@ from db.models import Base, ExtendedInfo, Patent
 logger = get_logger(__name__)
 
 
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=5120)
 def get_citations(db: Session, patent: str, direction: Literal["backward", "forward"]) -> set[str]:
     """
     获取专利的引用
@@ -22,7 +22,7 @@ def get_citations(db: Session, patent: str, direction: Literal["backward", "forw
     else:
         citations_str = db.query(Patent.forward_citations).filter(Patent.publication_number == patent).first()
 
-    return set(citations_str[0].split(",")) if citations_str else set()
+    return set(citations_str[0].split(",")) if citations_str and citations_str[0] else set()
 
 
 def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[str]]:
@@ -50,20 +50,33 @@ if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
 
     session = SessionLocal()
+    patent_count = session.query(Patent).filter(Patent.listed_company).count()
+    logger.info(f"待处理专利数量: {patent_count}")
 
-    # 循环遍历patent表里的每一行
-    patent_count = session.query(Patent).filter(Patent.listed_company == True).count()
-    for patent in tqdm(session.query(Patent).filter(Patent.listed_company == True).all(), total=patent_count):
-        publication_number = patent.publication_number
-        b1f0_patents, b1f1_patents, b0f1_patents = get_bxfx(session, publication_number)  # type: ignore
-        info = ExtendedInfo(
-            publication_number=publication_number,
-            b1f0_patents=",".join(b1f0_patents),
-            b1f1_patents=",".join(b1f1_patents),
-            b0f1_patents=",".join(b0f1_patents),
-        )
-        session.add(info)
-        session.commit()
+    # 分批遍历所有上市公司专利
+    batch_size = 10000
+    with tqdm(total=patent_count) as pbar:
+        offset = 0
+        while True:
+            patents = session.query(Patent).filter(Patent.listed_company).offset(offset).limit(batch_size).all()
+            if not patents:
+                break
+
+            for patent in patents:
+                publication_number = patent.publication_number
+                b1f0_patents, b1f1_patents, b0f1_patents = get_bxfx(session, publication_number)  # type: ignore
+                info = ExtendedInfo(
+                    publication_number=publication_number,
+                    b1f0_patents=",".join(b1f0_patents),
+                    b1f1_patents=",".join(b1f1_patents),
+                    b0f1_patents=",".join(b0f1_patents),
+                )
+                session.add(info)
+                pbar.update(1)
+
+            session.commit()  # 批量提交
+            offset += batch_size
+            logger.info(f"已处理 {offset} / {patent_count} 专利")
 
     session.close()
     logger.info("计算完成")

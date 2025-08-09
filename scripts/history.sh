@@ -6,3 +6,6 @@ python add_listed.py \
 
 # 2025年8月8日，获取上市公司的backward_citations中缺失的
 python get_missing.py
+
+# 2025年8月9日，计算所有上市公司的bxfx
+python cal_bxfx.py
