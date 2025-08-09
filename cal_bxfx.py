@@ -13,44 +13,45 @@ from db.models import Base, ExtendedInfo, Patent
 logger = get_logger(__name__)
 
 
-@lru_cache(maxsize=5120)
-def get_patent_date(db: Session, patent: str) -> date | None:
-    """
-    获取专利的发布日期
-    """
-    result = db.query(Patent.publication_date).filter(Patent.publication_number == patent).first()
-    return result[0] if result else None
-
-
-@lru_cache(maxsize=5120)
-def get_citations(db: Session, patent: str, direction: Literal["backward", "forward"]) -> set[str]:
-    """
-    获取专利的引用
-    """
-    if direction == "backward":
-        citations_str = db.query(Patent.backward_citations).filter(Patent.publication_number == patent).first()
-    else:
-        citations_str = db.query(Patent.forward_citations).filter(Patent.publication_number == patent).first()
-
-    return set(citations_str[0].split(",")) if citations_str and citations_str[0] else set()
-
-
 def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[str]]:
     """
     给定焦点专利号，返回b1f0, b1f1, b0f1专利列表
     """
-    backward_patents = get_citations(db, focus_patent, "backward")
-    forward_patents = get_citations(db, focus_patent, "forward")
+
+    @lru_cache(maxsize=204800)
+    def get_patent_date(patent: str) -> date | None:
+        """
+        获取专利的发布日期
+        """
+        result = db.query(Patent.publication_date).filter(Patent.publication_number == patent).first()
+        return result[0] if result else None
+
+    @lru_cache(maxsize=204800)
+    def get_citations(patent: str, direction: Literal["backward", "forward"]) -> set[str]:
+        """
+        获取专利的引用
+        """
+        if not db.query(Patent).filter(Patent.publication_number == patent).first():
+            raise ValueError(f"专利 {patent} 不存在")
+        if direction == "backward":
+            citations_str = db.query(Patent.backward_citations).filter(Patent.publication_number == patent).first()
+        else:
+            citations_str = db.query(Patent.forward_citations).filter(Patent.publication_number == patent).first()
+
+        return set(citations_str[0].split(",")) if citations_str and citations_str[0] else set()
+
+    backward_patents = get_citations(focus_patent, "backward")
+    forward_patents = get_citations(focus_patent, "forward")
 
     forward_patents_of_backward_patents = set()
     for backward_patent in backward_patents:
-        forward_patents_of_backward_patents.update(get_citations(db, backward_patent, "forward"))
+        forward_patents_of_backward_patents.update(get_citations(backward_patent, "forward"))
 
     b0f1 = forward_patents - forward_patents_of_backward_patents
     b1f1 = forward_patents & forward_patents_of_backward_patents
 
     # 获取焦点专利的发布日期
-    focus_patent_date = get_patent_date(db, focus_patent)
+    focus_patent_date = get_patent_date(focus_patent)
 
     # 对于b1f0专利，需要过滤掉发布日期早于或等于焦点专利的专利
     potential_b1f0 = forward_patents_of_backward_patents - forward_patents - {focus_patent}
@@ -58,7 +59,7 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
 
     if focus_patent_date:
         for patent in potential_b1f0:
-            patent_date = get_patent_date(db, patent)
+            patent_date = get_patent_date(patent)
             if patent_date and patent_date > focus_patent_date:
                 b1f0.add(patent)
     else:
@@ -88,8 +89,13 @@ if __name__ == "__main__":
                 break
 
             for patent in patents:
+                pbar.update(1)
                 publication_number = patent.publication_number
-                b1f0_patents, b1f1_patents, b0f1_patents = get_bxfx(session, publication_number)  # type: ignore
+                try:
+                    b1f0_patents, b1f1_patents, b0f1_patents = get_bxfx(session, publication_number)  # type: ignore
+                except ValueError as e:
+                    logger.error(f"跳过专利 {publication_number}: {e}")
+                    continue
                 info = ExtendedInfo(
                     publication_number=publication_number,
                     b1f0_patents=",".join(b1f0_patents),
@@ -97,7 +103,6 @@ if __name__ == "__main__":
                     b0f1_patents=",".join(b0f1_patents),
                 )
                 session.add(info)
-                pbar.update(1)
 
             session.commit()  # 批量提交
             offset += batch_size
