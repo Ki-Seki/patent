@@ -85,6 +85,15 @@ if __name__ == "__main__":
         offset = 0
         while True:
             patents = session.query(Patent).filter(Patent.listed_company).offset(offset).limit(batch_size).all()
+
+            # 过滤掉本身就在extendedinfo里的
+            patents = [
+                p
+                for p in patents
+                if not session.query(ExtendedInfo)
+                .filter(ExtendedInfo.publication_number == p.publication_number)
+                .first()
+            ]
             if not patents:
                 break
 
