@@ -39,3 +39,13 @@ class PatentMissing(Base):
     __tablename__ = "patent_missing"
 
     publication_number = Column(String(20), primary_key=True)
+
+
+class CDIndex(Base):
+    __tablename__ = "cd_index"
+
+    publication_number = Column(String(20), primary_key=True)
+    cd_t = Column(DECIMAL, default=None)
+    cd_f_t = Column(DECIMAL, default=None)
+    cd_f2_t = Column(DECIMAL, default=None)
+    cd_f3_t = Column(DECIMAL, default=None)

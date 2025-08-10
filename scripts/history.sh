@@ -9,3 +9,8 @@ python get_missing.py
 
 # 2025年8月9日，计算所有上市公司的bxfx
 python cal_bxfx.py
+
+# 2025年8月11日，计算前三个cd index
+python cal_cd.py \
+    --index-names cd_t,cd_f_t,cd_f2_t \
+    --batch-size 10000
