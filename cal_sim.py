@@ -14,7 +14,7 @@ from db.models import Base, ExtendedInfo, Patent, PatentMatrix
 logger = get_logger(__name__)
 
 
-def get_similarity(sentence1: str, sentence2: str, url: str = "http://wjuru36-service:80/similarity") -> float | None:
+def get_similarity(sentence1: str, sentence2: str, url: str = "http://if-dbepe3l7zwjuru36-service:80/similarity") -> float | None:
     payload = {
         "sentence1": sentence1,
         "sentence2": sentence2,
