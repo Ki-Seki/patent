@@ -8,3 +8,4 @@ tqdm-stubs
 lxml
 lxml-stubs
 more-itertools
+types-requests

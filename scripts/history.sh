@@ -33,3 +33,7 @@ python cal_cd.py \
 
 # 2025年8月11日，备份数据库
 mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250811.sql
+
+# 2025年8月11日，部署jina服务
+cd /mnt/public2/code/ssc/patent/
+HF_ENDPOINT=https://hf-mirror.com uvicorn serve_jina_cos:app --host 0.0.0.0 --port 8000
