@@ -30,6 +30,9 @@ def setup_logging():
 # Initialize logging configuration
 setup_logging()
 
+# 禁用urllib3.connectionpool的debug级别日志
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
 
 def get_logger(name):
     """
