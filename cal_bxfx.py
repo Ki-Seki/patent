@@ -1,5 +1,4 @@
 from datetime import date
-from functools import lru_cache
 from typing import Literal
 
 from sqlalchemy.orm import Session
@@ -18,7 +17,6 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
     给定焦点专利号，返回b1f0, b1f1, b0f1专利列表
     """
 
-    @lru_cache(maxsize=204800)
     def get_patent_date(patent: str) -> date | None:
         """
         获取专利的发布日期
@@ -26,7 +24,6 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
         result = db.query(Patent.publication_date).filter(Patent.publication_number == patent).first()
         return result[0] if result else None
 
-    @lru_cache(maxsize=204800)
     def get_citations(patent: str, direction: Literal["backward", "forward"]) -> set[str]:
         """
         获取专利的引用
@@ -66,7 +63,7 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
         # 如果焦点专利没有日期信息，保持原有逻辑
         b1f0 = potential_b1f0
 
-    return b0f1, b1f1, b1f0
+    return b1f0, b1f1, b0f1
 
 
 if __name__ == "__main__":
