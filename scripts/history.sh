@@ -26,14 +26,14 @@ python get_missing.py
 # 2025年8月9日，计算所有上市公司的bxfx
 python cal_bxfx.py
 
-# 2025年8月10日，计算前三个cd index
-python cal_cd.py \
-    --index-names cd_t,cd_f_t,cd_f2_t \
-    --batch-size 10000
-
 # 2025年8月11日，备份数据库
 mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250811.sql
 
 # 2025年8月11日，部署jina服务
 cd /mnt/public2/code/ssc/patent/
 HF_ENDPOINT=https://hf-mirror.com uvicorn serve_jina_cos:app --host 0.0.0.0 --port 8000
+
+# 2025年8月13日，计算四个cd index
+python cal_cd.py \
+    --index-names cd_t,cd_f_t,cd_f2_t,cd_f3_t \
+    --batch-size 1000

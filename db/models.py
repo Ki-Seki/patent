@@ -27,14 +27,6 @@ class ExtendedInfo(Base):
     b0f1_patents = Column(Text)
 
 
-class PatentMatrix(Base):
-    __tablename__ = "patent_matrix"
-
-    small_patent = Column(String(20), ForeignKey("patent.publication_number"), primary_key=True)
-    big_patent = Column(String(20), ForeignKey("patent.publication_number"), primary_key=True)
-    similarity = Column(DECIMAL)
-
-
 class PatentMissing(Base):
     __tablename__ = "patent_missing"
 
@@ -45,7 +37,7 @@ class CDIndex(Base):
     __tablename__ = "cd_index"
 
     publication_number = Column(String(20), primary_key=True)
-    cd_t = Column(DECIMAL, default=None)
-    cd_f_t = Column(DECIMAL, default=None)
-    cd_f2_t = Column(DECIMAL, default=None)
-    cd_f3_t = Column(DECIMAL, default=None)
+    cd_t = Column(DECIMAL(18, 6), default=None)
+    cd_f_t = Column(DECIMAL(18, 6), default=None)
+    cd_f2_t = Column(DECIMAL(18, 6), default=None)
+    cd_f3_t = Column(DECIMAL(18, 6), default=None)

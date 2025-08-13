@@ -1,11 +1,16 @@
 import argparse
 
+from functools import lru_cache
+
+import requests
+
 from sqlalchemy.orm import Session
+from tenacity import retry, stop_after_attempt
 from tqdm import tqdm
 
 from db import SessionLocal, engine
 from db.log import get_logger
-from db.models import Base, CDIndex, ExtendedInfo
+from db.models import Base, CDIndex, ExtendedInfo, Patent
 
 
 logger = get_logger(__name__)
@@ -13,6 +18,26 @@ logger = get_logger(__name__)
 
 def count(patents: str) -> int:
     return len([p for p in patents.split(",") if p.strip()]) if patents else 0
+
+
+
+@retry(stop=stop_after_attempt(3))
+@lru_cache(maxsize=10240)
+def get_similarity(
+    sentence1: str, sentence2: str, url: str = "http://if-dbepe3l7zwjuru36-service:80/similarity"
+) -> float:
+    payload = {
+        "sentence1": sentence1,
+        "sentence2": sentence2,
+    }
+    headers = {"Content-Type": "application/json"}
+
+    resp = requests.post(url, json=payload, headers=headers, timeout=5)
+    if resp.status_code == 200:
+        data = resp.json()
+        return data["similarity"]
+    else:
+        raise ValueError(f"请求失败，状态码: {resp.status_code}, 响应内容: {resp.text}")
 
 
 def cal_cd_t(db: Session, info: ExtendedInfo) -> float | None:
@@ -52,7 +77,38 @@ def cal_cd_f2_t(db: Session, info: ExtendedInfo) -> float | None:
 
 
 def cal_cd_f3_t(db: Session, info: ExtendedInfo) -> float | None:
-    return None
+    def get_abstract(patent: str) -> str:
+        return db.query(Patent.abstract).filter(Patent.publication_number == patent).scalar() or ""
+
+    focus_patent = info.publication_number
+    forward_patents = {
+        p.strip() for group in (info.b1f1_patents, info.b0f1_patents) if group for p in group.split(",") if p.strip()
+    }
+
+    cos_similarity = []
+    for forward_patent in forward_patents:
+        small_patent, big_patent = sorted([focus_patent, forward_patent])
+
+        small_patent_abs = get_abstract(small_patent)
+        if small_patent_abs == "":
+            continue
+
+        big_patent_abs = get_abstract(big_patent)
+        if big_patent_abs == "":
+            continue
+
+        cos_similarity.append(get_similarity(small_patent_abs, big_patent_abs))
+
+    if cos_similarity == []:
+        return None
+
+    cd_f2_t = cal_cd_f2_t(db, info)
+
+    if cd_f2_t is None:
+        return None
+
+    mean_cos_similarity = sum(cos_similarity) / len(cos_similarity)
+    return mean_cos_similarity * cd_f2_t
 
 
 CAL_CD_MAPPING = {"cd_t": cal_cd_t, "cd_f_t": cal_cd_f_t, "cd_f2_t": cal_cd_f2_t, "cd_f3_t": cal_cd_f3_t}
