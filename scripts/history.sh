@@ -35,5 +35,8 @@ HF_ENDPOINT=https://hf-mirror.com uvicorn serve_jina_cos:app --host 0.0.0.0 --po
 
 # 2025年8月13日，计算四个cd index
 python cal_cd.py \
-    --index-names cd_t,cd_f_t,cd_f2_t,cd_f3_t \
+    --index-names cd_t,cd_f_t,cd_f2_t \
+    --batch-size 10000
+python cal_cd.py \
+    --index-names cd_f3_t \
     --batch-size 1000

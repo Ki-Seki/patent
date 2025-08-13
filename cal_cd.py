@@ -19,10 +19,8 @@ logger = get_logger(__name__)
 def count(patents: str) -> int:
     return len([p for p in patents.split(",") if p.strip()]) if patents else 0
 
-
-
-@retry(stop=stop_after_attempt(3))
 @lru_cache(maxsize=10240)
+@retry(stop=stop_after_attempt(5))
 def get_similarity(
     sentence1: str, sentence2: str, url: str = "http://if-dbepe3l7zwjuru36-service:80/similarity"
 ) -> float:
