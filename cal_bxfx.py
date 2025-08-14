@@ -28,14 +28,13 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
         """
         获取专利的引用
         """
-        if not db.query(Patent).filter(Patent.publication_number == patent).first():
-            raise ValueError(f"专利 {patent} 不存在")
-        if direction == "backward":
-            citations_str = db.query(Patent.backward_citations).filter(Patent.publication_number == patent).first()
-        else:
-            citations_str = db.query(Patent.forward_citations).filter(Patent.publication_number == patent).first()
+        field = Patent.backward_citations if direction == "backward" else Patent.forward_citations
+        citations_str = db.query(field).filter(Patent.publication_number == patent).scalar()
 
-        return set(citations_str[0].split(",")) if citations_str and citations_str[0] else set()
+        if citations_str is None:
+            raise ValueError(f"专利 {patent} 不存在")
+
+        return set(citations_str.split(",")) if citations_str else set()
 
     backward_patents = get_citations(focus_patent, "backward")
     forward_patents = get_citations(focus_patent, "forward")
@@ -57,6 +56,7 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
     if focus_patent_date:
         for patent in potential_b1f0:
             patent_date = get_patent_date(patent)
+            # 会忽略找不到的专利和日期在焦点专利之前的专利，仅当“存在该专利” and “专利日期在焦点专利日期之后”时才添加
             if patent_date and patent_date > focus_patent_date:
                 b1f0.add(patent)
     else:
