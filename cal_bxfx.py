@@ -56,7 +56,8 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
     if focus_patent_date:
         for patent in potential_b1f0:
             patent_date = get_patent_date(patent)
-            # 会忽略找不到的专利和日期在焦点专利之前的专利，仅当“存在该专利” and “专利日期在焦点专利日期之后”时才添加
+            # 会忽略找不到的专利和日期在焦点专利之前/和焦点专利相同的专利，
+            # 仅当“存在该专利” and “专利日期在焦点专利日期之后”时才添加
             if patent_date and patent_date > focus_patent_date:
                 b1f0.add(patent)
     else:
