@@ -29,12 +29,17 @@ def get_bxfx(db: Session, focus_patent: str) -> tuple[set[str], set[str], set[st
         获取专利的引用
         """
         field = Patent.backward_citations if direction == "backward" else Patent.forward_citations
-        citations_str = db.query(field).filter(Patent.publication_number == patent).scalar()
 
-        if citations_str is None:
+        row = db.query(field).filter(Patent.publication_number == patent).first()
+        if row is None:  # 没有行 => 专利不存在
             raise ValueError(f"专利 {patent} 不存在")
 
-        return set(citations_str.split(",")) if citations_str else set()
+        citations_str = row[0]  # 可能是 None / "" / "A,B"
+        if not citations_str:
+            return set()
+
+        # 去空白、去空项
+        return {x.strip() for x in citations_str.split(",") if x.strip()}
 
     backward_patents = get_citations(focus_patent, "backward")
     forward_patents = get_citations(focus_patent, "forward")
