@@ -104,7 +104,7 @@ def cal_cd_f3_t(db: Session, info: ExtendedInfo) -> float | None:
         return None
 
     mean_cos_similarity = sum(cos_similarity) / len(cos_similarity)
-    return mean_cos_similarity * cd_f2_t
+    return cd_f2_t / mean_cos_similarity if mean_cos_similarity != 0 else None
 
 
 CAL_CD_MAPPING = {"cd_t": cal_cd_t, "cd_f_t": cal_cd_f_t, "cd_f2_t": cal_cd_f2_t, "cd_f3_t": cal_cd_f3_t}
