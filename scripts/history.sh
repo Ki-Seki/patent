@@ -12,6 +12,9 @@ SHOW BINARY LOGS;
 SHOW VARIABLES LIKE 'log_bin%';
 RESET MASTER;  # 清理所有 binlog
 
+# 备份数据库
+mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250811.sql
+
 # ─── 历史记录 ─────────────────────────────────────────────────────────────────────
 
 # 2025年8月7日，添加最早忽略掉的上市公司字段
@@ -23,24 +26,17 @@ python add_listed.py \
 # 2025年8月8日，获取上市公司的backward_citations中缺失的
 python get_missing.py
 
-# 由于代码编写错误，注释掉的部分需要清理掉
-# # 2025年8月9日，计算所有上市公司的bxfx
-# python cal_bxfx.py
-
-# # 2025年8月11日，备份数据库
-# mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250811.sql
-
-# # 2025年8月11日，部署jina服务
-# cd /mnt/public2/code/ssc/patent/
-# HF_ENDPOINT=https://hf-mirror.com uvicorn serve_jina_cos:app --host 0.0.0.0 --port 8000
-
-# # 2025年8月13日，计算四个cd index
-# python cal_cd.py \
-#     --index-names cd_t,cd_f_t,cd_f2_t \
-#     --batch-size 10000
-# python cal_cd.py \
-#     --index-names cd_f3_t \
-#     --batch-size 1000
-
 # 2025年8月13日，计算所有上市公司的bxfx
 python cal_bxfx.py
+
+# 2025年8月15日，部署jina服务
+cd /mnt/public2/code/ssc/patent/
+HF_ENDPOINT=https://hf-mirror.com uvicorn serve_jina_cos:app --host 0.0.0.0 --port 8000
+
+# 2025年8月15日，计算四个cd index
+python cal_cd.py \
+    --index-names cd_t,cd_f_t,cd_f2_t \
+    --batch-size 10000
+python cal_cd.py \
+    --index-names cd_f3_t \
+    --batch-size 1000
