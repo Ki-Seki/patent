@@ -76,6 +76,10 @@ def cal_cd_f3_t(db: Session, info: ExtendedInfo) -> float | None:
     def get_abstract(patent: str) -> str:
         return db.query(Patent.abstract).filter(Patent.publication_number == patent).scalar() or ""
 
+    cd_f2_t = cal_cd_f2_t(db, info)
+    if cd_f2_t is None:
+        return None
+
     focus_patent = info.publication_number
     forward_patents = {
         p.strip() for group in (info.b1f1_patents, info.b0f1_patents) if group for p in group.split(",") if p.strip()
@@ -96,11 +100,6 @@ def cal_cd_f3_t(db: Session, info: ExtendedInfo) -> float | None:
         cos_similarity.append(get_similarity(small_patent_abs, big_patent_abs))
 
     if cos_similarity == []:
-        return None
-
-    cd_f2_t = cal_cd_f2_t(db, info)
-
-    if cd_f2_t is None:
         return None
 
     mean_cos_similarity = sum(cos_similarity) / len(cos_similarity)
