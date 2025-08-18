@@ -1,5 +1,7 @@
 import argparse
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import requests
 
 from sqlalchemy.orm import Session
@@ -73,36 +75,47 @@ def cal_cd_f2_t(db: Session, info: ExtendedInfo) -> float | None:
 
 
 def cal_cd_f3_t(db: Session, info: ExtendedInfo) -> float | None:
-    def get_abstract(patent: str) -> str:
-        return db.query(Patent.abstract).filter(Patent.publication_number == patent).scalar() or ""
+    max_workers = 16  # 并发线程数
+
+    def get_abstract(patent: str | list[str] | set[str]) -> dict[str, str]:
+        if isinstance(patent, str):
+            patent = [patent]
+
+        results = (
+            db.query(Patent.publication_number, Patent.abstract).filter(Patent.publication_number.in_(patent)).all()
+        )
+        return {pub: abstract or "" for pub, abstract in results}
 
     cd_f2_t = cal_cd_f2_t(db, info)
     if cd_f2_t is None:
         return None
 
     focus_patent = info.publication_number
+    focus_patent_abs = get_abstract(focus_patent).get(focus_patent, "")  # type: ignore[call-overload,arg-type]
+    if focus_patent_abs == "":
+        return None
+
     forward_patents = {
         p.strip() for group in (info.b1f1_patents, info.b0f1_patents) if group for p in group.split(",") if p.strip()
     }
+    forward_patents_abs = get_abstract(forward_patents)
+    forward_patents_abs = {k: v for k, v in forward_patents_abs.items() if v}
 
-    cos_similarity = []
-    for forward_patent in forward_patents:
-        small_patent, big_patent = sorted([focus_patent, forward_patent])
-
-        small_patent_abs = get_abstract(small_patent)
-        if small_patent_abs == "":
-            continue
-
-        big_patent_abs = get_abstract(big_patent)
-        if big_patent_abs == "":
-            continue
-
-        cos_similarity.append(get_similarity(small_patent_abs, big_patent_abs))
-
-    if cos_similarity == []:
+    # 并发计算相似度
+    cos_similarities: list[float] = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_patent = {
+            executor.submit(get_similarity, focus_patent_abs, abstract): pub
+            for pub, abstract in forward_patents_abs.items()
+        }
+        for future in as_completed(future_to_patent):
+            sim = future.result()
+            if sim is not None:
+                cos_similarities.append(sim)
+    if not cos_similarities:
         return None
 
-    mean_cos_similarity = sum(cos_similarity) / len(cos_similarity)
+    mean_cos_similarity = sum(cos_similarities) / len(cos_similarities)
     return cd_f2_t / mean_cos_similarity if mean_cos_similarity != 0 else None
 
 
