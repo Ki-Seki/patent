@@ -13,7 +13,15 @@ SHOW VARIABLES LIKE 'log_bin%';
 RESET MASTER;  # 清理所有 binlog
 
 # 备份数据库
-mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250811.sql
+mysqldump -u root -p patent_calculation > tmp/db_patent_calculation_250820.sql
+
+# 导出到csv
+SELECT *
+FROM patent_calculation.cd_index
+INTO OUTFILE '/var/lib/mysql-files/cd_index_export_250820.csv'
+FIELDS TERMINATED BY ',' 
+OPTIONALLY ENCLOSED BY '"' 
+LINES TERMINATED BY '\n';
 
 # ─── 历史记录 ─────────────────────────────────────────────────────────────────────
 
