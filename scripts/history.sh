@@ -23,6 +23,27 @@ FIELDS TERMINATED BY ','
 OPTIONALLY ENCLOSED BY '"' 
 LINES TERMINATED BY '\n';
 
+# 导出原始数据和cd index到csv
+use patent_calculation;
+SELECT 
+    p.publication_number,
+    p.publication_date,
+    p.patent_office,
+    p.application_filing_date,
+    p.applicants_bvd_id_numbers,
+    p.listed_company,
+    c.cd_t,
+    c.cd_f_t,
+    c.cd_f2_t,
+    c.cd_f3_t
+FROM cd_index c
+JOIN patent p ON c.publication_number = p.publication_number
+INTO OUTFILE '/var/lib/mysql-files/250826_the_big_table.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n';
+
+
 # ─── 历史记录 ─────────────────────────────────────────────────────────────────────
 
 # 2025年8月7日，添加最早忽略掉的上市公司字段
